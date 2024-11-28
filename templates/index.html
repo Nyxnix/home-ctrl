@@ -1,82 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="text/javascript" src="/static/script.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/index.css" />
     <title>Microphone Control</title>
-    <script>
-        // Fetch and update microphone status
-        async function fetchStatus() {
-            try {
-                const response = await fetch("/get_status", { method: "POST" });
-                const data = await response.json();
-                const button = document.getElementById("toggleButton");
-                button.textContent = data.status === "muted" ? "Unmute" : "Mute";
-            } catch (error) {
-                console.error("Error fetching status:", error);
-            }
-        }
-
-        // Toggle microphone state
-        async function fetchStatus() {
-            try {
-                const response = await fetch("/get_status", { method: "POST" });
-                const data = await response.json();
-                const button = document.getElementById("toggleButton");
-                button.textContent = data.status === "muted" ? "Unmute" : "Mute";
-            } catch (error) {
-                console.error("Error fetching status:", error);
-            }
-        }
-
-        async function toggleMicrophone() {
-            try {
-                const response = await fetch("/toggle_microphone", { method: "POST" });
-                const data = await response.json();
-                const button = document.getElementById("toggleButton");
-                button.textContent = data.status === "muted" ? "Unmute" : "Mute";
-            } catch (error) {
-                console.error("Error toggling microphone:", error);
-            }
-        }
-
-        // Poll status every 2 seconds
-        setInterval(fetchStatus, 500);
-
-        // Fetch initial status on page load
-        window.onload = fetchStatus;
-
-        // Unmute the microphone
-        async function unmuteMicrophone() {
-            try {
-                const response = await fetch("/unmute_microphone", { method: "POST" });
-                const data = await response.json();
-                fetchStatus(); // Refresh status after unmuting
-            } catch (error) {
-                console.error("Error unmuting microphone:", error);
-            }
-        }
-
-        // Unmute the microphone
-        async function muteMicrophone() {
-            try {
-                const response = await fetch("/mute_microphone", { method: "POST" });
-                const data = await response.json();
-                fetchStatus(); // Refresh status after unmuting
-            } catch (error) {
-                console.error("Error muting microphone:", error);
-            }
-        }
-
-        // Fetch initial status on page load
-        window.onload = fetchStatus;
-    </script>
-</head>
-<body>
-    <h1>Microphone Control</h1>
-    <button id="toggleButton" onclick="toggleMicrophone()">Loading...</button>
-    <br><br>
-    <button onclick="muteMicrophone()">Mute</button>
-    <button onclick="unmuteMicrophone()">Unmute</button>
-</body>
+  </head>
+  <body>
+    <div id="app-container">
+      <div id="mic_controls">
+        <div id="mic_buttons">
+          <h1>Microphone Control</h1>
+          <button id="toggleButton" onclick="toggleMicrophone()">
+            Loading...
+          </button>
+          <br /><br />
+          <h3>Individual Mute Controls</h3>
+          <button onclick="muteMicrophone()">Mute</button>
+          <button onclick="unmuteMicrophone()">Unmute</button>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>

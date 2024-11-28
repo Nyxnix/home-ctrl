@@ -37,7 +37,7 @@ def sendCommand(command):
             makeShell()
 
         ssh_shell.send(command + '\n')
-        time.sleep(2)
+        #time.sleep(2)
         output = ssh_shell.recv(1024).decode('utf-8').strip()
         print(f"Command output: {output}")
         return output
