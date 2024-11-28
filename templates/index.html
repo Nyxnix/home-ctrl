@@ -12,15 +12,18 @@
       <div id="mic_controls">
         <div id="mic_buttons">
           <h1>Microphone Control</h1>
-          <button id="toggleButton" onclick="toggleMicrophone()">
-            Loading...
-          </button>
+          <button id="toggleButton" onclick="toggleMicrophone()">Loading...</button>
           <br /><br />
           <h3>Individual Mute Controls</h3>
           <button onclick="muteMicrophone()">Mute</button>
           <button onclick="unmuteMicrophone()">Unmute</button>
         </div>
       </div>
+      <div id="monitor_controls">
+        <h3>Monitor Controls</h3>
+        <button id="micMonitorButton" onclick="toggleMicMonitor()">Mic Monitor</button>
+        <button id="guitarMonitorButton" onclick="toggleGuitarMonitor()">Guitar Monitor</button>
+      </div>      
     </div>
   </body>
 </html>

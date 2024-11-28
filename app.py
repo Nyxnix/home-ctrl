@@ -4,10 +4,23 @@ import time
 
 app = Flask(__name__)
 
+# Need to make a lot of these vars assignable from the web page, but im lazy rn
 # Tesira SSH info
 HOST = "192.168.1.183"
 USER = "default"
 PASSWORD = ""
+
+# Tesira Instance Tag/index assign
+LevelBlockTag = "Level1"
+LevelBlockIndex = "1"
+MixerBlockTag = "Mixer1"
+
+# stuff that only applies to my tesira :)
+micInIndex = "1"
+guitarInIndex = "2"
+
+outLIndex = "3"
+outRIndex = "4"
 
 # Global variables
 ssh_client = None
@@ -37,7 +50,7 @@ def sendCommand(command):
             makeShell()
 
         ssh_shell.send(command + '\n')
-        #time.sleep(2)
+        time.sleep(0.1)
         output = ssh_shell.recv(1024).decode('utf-8').strip()
         print(f"Command output: {output}")
         return output
@@ -46,36 +59,69 @@ def sendCommand(command):
         return "error"
 
 # Commands
-def get_status():
+def get_mic_status():
     try:
-        raw_status = sendCommand("Level1 get mute 1")
-        if '+OK "value":true' in raw_status:
-            return "muted"
-        elif '+OK "value":false' in raw_status:
-            return "unmuted"
+        micStatus = sendCommand(f"{LevelBlockTag} get mute {LevelBlockIndex}")
+        if '+OK "value":true' in micStatus:
+            return jsonify({"status": "muted"})
+        elif '+OK "value":false' in micStatus:
+            return jsonify({"status": "unmuted"})
         else:
-            return "unknown"
+            return jsonify({"status": "unknown"})
     except Exception as e:
         print(f"Error: {e}")
-        return "error"
+        return jsonify({"status": "error"})
+
+
+def get_mic_monitor_status():
+    try:
+        micMonitorStatus = sendCommand(f"{MixerBlockTag} get crosspointLevelState {micInIndex} {outLIndex}")
+        if '+OK "value":true' in micMonitorStatus:
+            return jsonify({"status": "active"})
+        elif '+OK "value":false' in micMonitorStatus:
+            return jsonify({"status": "inactive"})
+        else:
+            return jsonify({"status": "unknown"})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"status": "error"})
+
 
 def toggle_microphone():
     try:
-        return sendCommand("Level1 toggle mute 1")
+        return sendCommand(f"{LevelBlockTag} toggle mute {LevelBlockIndex}")
     except Exception as e:
         print(f"Error: {e}")
         return "error"
 
 def mute_microphone():
     try:
-        return sendCommand("Level1 set mute 1 true")
+        return sendCommand(f"{LevelBlockTag} set mute {LevelBlockIndex} true")
     except Exception as e:
         print(f"Error: {e}")
         return "error"
 
 def unmute_microphone():
     try:
-        return sendCommand("Level1 set mute 1 false")
+        return sendCommand(f"{LevelBlockTag} set mute {LevelBlockIndex} false")
+    except Exception as e:
+        print(f"Error: {e}")
+        return "error"
+
+def micMonitorToggle():
+    try:
+        sendCommand(f"{MixerBlockTag} toggle crosspointLevelState {micInIndex} {outLIndex}")
+        sendCommand(f"{MixerBlockTag} toggle crosspointLevelState {micInIndex} {outRIndex}")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return "error"
+
+def guitarMonitorToggle():
+    try:
+        sendCommand(f"{MixerBlockTag} toggle crosspointLevelState {guitarInIndex} {outLIndex}")
+        sendCommand(f"{MixerBlockTag} toggle crosspointLevelState {guitarInIndex} {outRIndex}")
+        return None
     except Exception as e:
         print(f"Error: {e}")
         return "error"
@@ -85,25 +131,90 @@ def unmute_microphone():
 def index():
     return render_template("index.html")
 
-@app.route("/get_status", methods=["POST"])
-def get_status_route():
-    status = get_status()
-    return jsonify({"status": status})
+@app.route("/get_all_statuses", methods=["POST"])
+def get_all_statuses():
+    try:
+        mic_status = get_mic_status_json().get_json()["status"]
+        mic_monitor_status = get_mic_monitor_status_json().get_json()["status"]
+        guitar_monitor_status = get_guitar_monitor_status_json().get_json()["status"]
+
+        return jsonify({
+            "mic_status": mic_status,
+            "mic_monitor_status": mic_monitor_status,
+            "guitar_monitor_status": guitar_monitor_status
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({
+            "mic_status": "error",
+            "mic_monitor_status": "error",
+            "guitar_monitor_status": "error"
+        })
+
+
+# Helper functions to fetch individual status as JSON (for reuse)
+def get_mic_status_json():
+    return get_mic_status()
+
+def get_mic_monitor_status_json():
+    return get_mic_monitor_status()
+
+def get_guitar_monitor_status_json():
+    try:
+        guitarMonitorStatus = sendCommand(f"{MixerBlockTag} get crosspointLevelState {guitarInIndex} {outLIndex}")
+        if '+OK "value":true' in guitarMonitorStatus:
+            return jsonify({"status": "muted"})
+        elif '+OK "value":false' in guitarMonitorStatus:
+            return jsonify({"status": "unmuted"})
+        else:
+            return jsonify({"status": "unknown"})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"status": "error"})
 
 @app.route("/toggle_microphone", methods=["POST"])
 def toggle_microphone_route():
     result = toggle_microphone()
-    return jsonify({"status": get_status()})
+    return jsonify({"status": get_mic_status()})
 
 @app.route("/mute_microphone", methods=["POST"])
 def mute_microphone_route():
-    result = mute_microphone()
-    return jsonify({"status": get_status()})
+    try:
+        result = mute_microphone()
+
+        mic_status_response = get_mic_status()
+        mic_status_data = mic_status_response.get_json()  # Extract JSON data
+
+        return jsonify({"status": mic_status_data["status"]})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"status": "error"})
 
 @app.route("/unmute_microphone", methods=["POST"])
 def unmute_microphone_route():
-    result = unmute_microphone()
-    return jsonify({"status": get_status()})
+    try:
+        result = unmute_microphone()
+
+        mic_status_response = get_mic_status()
+        mic_status_data = mic_status_response.get_json()  # Extract JSON data
+
+        return jsonify({"status": mic_status_data["status"]})
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"status": "error"})
+
+
+@app.route("/mic_monitor", methods=["POST"])
+def toggle_mic_monitor_route():
+    result = micMonitorToggle()
+    return jsonify({"status": get_mic_monitor_status()})
+
+@app.route("/guitar_monitor", methods=["POST"])
+def toggle_guitar_monitor_route():
+    result = guitarMonitorToggle()
+    return jsonify({"status": get_guitar_monitor_status()})
 
 if __name__ == "__main__":
     app.run(debug=True)

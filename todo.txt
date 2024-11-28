@@ -1,0 +1,2 @@
+mic monitor on/off (crosspoint toggling)
+vol control for level block (vol up/down btns, slider, volume gauge)
